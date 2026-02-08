@@ -8,7 +8,7 @@ const client = new Client({
   ]
 });
 
-const TARGET_CHANNEL_ID = "PUT_CHANNEL_ID_HERE";
+const TARGET_CHANNEL_ID = "1469759313202512176";
 const PING_TEXT = "@everyone";
 const CUSTOM_MESSAGE = "⚠️ Please read the announcement above.";
 
@@ -32,4 +32,5 @@ client.on("messageCreate", async (message) => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
