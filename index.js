@@ -80,18 +80,14 @@ client.on("messageCreate", async (message) => {
     // Build repost content
     // If user sent only mentions/spaces, cleaned may be empty — still ping + gif.
     const boldText = cleaned ? `**${cleaned}**` : "";
-const hiddenGif = `[\u200b](${GIF_URL})`; // invisible clickable link, no preview
+const boldText = cleaned ? `**${cleaned}**` : "** **"; // keep some content even if empty
 
 await message.channel.send(
-  `${PING_TEXT}\n${boldText}\n${hiddenGif}`.trim()
+  `${PING_TEXT}\n\n${boldText}\n\n` // extra blank lines for spacing
 );
 
-  } catch (err) {
-    console.error("Error handling messageCreate:", err);
-  }
-});
-
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
