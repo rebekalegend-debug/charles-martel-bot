@@ -152,7 +152,21 @@ ${kbBlock}
     const safe = out.length > 1800 ? out.slice(0, 1800) + "…" : out;
 
     await message.reply(safe);
-  } catch (err) {
+  } } catch (err) {
+  console.error("Bot error FULL:", err);
+
+  // OpenAI SDK often includes useful fields:
+  if (err?.status) console.error("OpenAI status:", err.status);
+  if (err?.message) console.error("OpenAI message:", err.message);
+  if (err?.error) console.error("OpenAI error:", err.error);
+  if (err?.response) console.error("OpenAI response:", err.response);
+
+  try {
+    await message.reply(
+      "⚠️ I couldn’t reach the AI service. Check Railway logs for the exact error (model/keys/billing/rate limit)."
+    );
+  } catch {}
+} {
     console.error("Bot error:", err);
     // best-effort user-facing message
     try {
@@ -162,4 +176,5 @@ ${kbBlock}
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
