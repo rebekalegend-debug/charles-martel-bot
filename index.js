@@ -1,3 +1,4 @@
+
 import { Client, GatewayIntentBits, Partials } from "discord.js";
 
 const client = new Client({
@@ -12,15 +13,20 @@ const client = new Client({
 // CONFIG
 const TARGET_CHANNEL_ID = process.env.TARGET_CHANNEL_ID; // channel where users type announcements
 const PING_TEXT = "@everyone";
-const GIF_URL =
-  "https://cdn.discordapp.com/attachments/895376208085274675/1128908209445408848/image0.gif?ex=6988bbf3&is=69876a73&hm=98feb2f4eeb4660cb14bf91357311e284ec7b510e8917b41e2331a06aab6b1c5";
+
+// Webhook config (REQUIRED to get “Hella-style” separated messages)
+const WEBHOOK_URL = process.env.WEBHOOK_URL; // the channel webhook URL
+const WEBHOOK_NAME = process.env.WEBHOOK_NAME ?? "Announcement"; // shown name
+const WEBHOOK_AVATAR_URL = process.env.WEBHOOK_AVATAR_URL; // optional avatar url
 
 // Optional: prevent rapid re-triggers by same user (seconds)
 const USER_COOLDOWN_SECONDS = Number(process.env.USER_COOLDOWN_SECONDS ?? "0");
 const lastUserPostAt = new Map(); // userId -> timestamp ms
 
-if (!process.env.DISCORD_TOKEN || !TARGET_CHANNEL_ID) {
-  console.error("Missing env vars: DISCORD_TOKEN and TARGET_CHANNEL_ID are required.");
+if (!process.env.DISCORD_TOKEN || !TARGET_CHANNEL_ID || !WEBHOOK_URL) {
+  console.error(
+    "Missing env vars: DISCORD_TOKEN, TARGET_CHANNEL_ID, and WEBHOOK_URL are required."
+  );
   process.exit(1);
 }
 
@@ -38,7 +44,7 @@ function stripMentions(raw) {
   // Remove channel mentions: <#123>
   text = text.replace(/<#(\d+)>/g, "");
 
-  // Remove @everyone / @here (including attempts to bypass with spaces)
+  // Remove @everyone / @here
   text = text.replace(/@everyone/gi, "");
   text = text.replace(/@here/gi, "");
 
@@ -48,24 +54,60 @@ function stripMentions(raw) {
   return text;
 }
 
+async function sendViaWebhook(content) {
+  // Node 18+ has global fetch (Railway uses modern Node typically).
+  // If your runtime is older, tell me and I’ll add a node-fetch fallback.
+  const res = await fetch(WEBHOOK_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      content,
+      username: WEBHOOK_NAME,
+      avatar_url: WEBHOOK_AVATAR_URL
+    })
+  });
+
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    throw new Error(`Webhook failed: ${res.status} ${res.statusText} ${txt}`);
+  }
+}
+
 client.once("ready", () => {
   console.log(`Logged in as ${client.user.tag}`);
 });
 
 client.on("messageCreate", async (message) => {
   try {
+    // Ignore bots + ignore webhook messages (prevents loops)
     if (message.author.bot) return;
+    if (message.webhookId) return;
+
+    // Only react in the target channel
     if (message.channel.id !== TARGET_CHANNEL_ID) return;
+
+    // Optional per-user cooldown
+    if (USER_COOLDOWN_SECONDS > 0) {
+      const now = Date.now();
+      const last = lastUserPostAt.get(message.author.id) ?? 0;
+      if (now - last < USER_COOLDOWN_SECONDS * 1000) {
+        await message.delete().catch(() => {});
+        return;
+      }
+      lastUserPostAt.set(message.author.id, now);
+    }
 
     const cleaned = stripMentions(message.content);
 
     // Delete the original message
     await message.delete().catch(() => {});
 
-    // Bold + spacer (no gif, no embed)
-    const boldText = cleaned ? `**${cleaned}**` : "** **";
+    // Build repost content (Hella-style, clean)
+    // If empty after stripping, still ping everyone with no extra text
+    const boldText = cleaned ? ` **${cleaned}**` : "";
+    const out = `${PING_TEXT}${boldText}`;
 
-    await message.channel.send(`${PING_TEXT} ${boldText}\n\u200b`);
+    await sendViaWebhook(out);
   } catch (err) {
     console.error("Error handling messageCreate:", err);
   }
