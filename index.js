@@ -74,19 +74,20 @@ client.on("messageCreate", async (message) => {
 
     const cleaned = stripMentions(message.content);
 
-    // Delete the original message
-    await message.delete().catch(() => {});
+// Delete the original message
+await message.delete().catch(() => {});
 
-    // Build repost content
-    // If user sent only mentions/spaces, cleaned may be empty — still ping + gif.
-    const boldText = cleaned ? `**${cleaned}**` : "";
-const boldText = cleaned ? `**${cleaned}**` : "** **"; // keep some content even if empty
+// Build repost content
+// If message is empty after stripping mentions, keep spacing
+const boldText = cleaned ? `**${cleaned}**` : "** **";
 
+// Send as a NEW message (no embeds, no GIF, spaced)
 await message.channel.send(
-  `${PING_TEXT}\n\n${boldText}\n\n` // extra blank lines for spacing
+  `${PING_TEXT} ${boldText}\n\u200b`
 );
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
