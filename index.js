@@ -12,9 +12,11 @@ const client = new Client({
 
 // CONFIG
 const TARGET_CHANNEL_ID = process.env.TARGET_CHANNEL_ID; // channel where users type announcements
-const PING_TEXT = "@everyone";
 
-// Webhook config (REQUIRED to get “Hella-style” separated messages)
+// IMPORTANT: role mention format is <@&ROLE_ID>
+const PING_TEXT = "<@&1469745384011075799>";
+
+// Webhook config
 const WEBHOOK_URL = process.env.WEBHOOK_URL; // the channel webhook URL
 const WEBHOOK_NAME = process.env.WEBHOOK_NAME ?? "Announcement"; // shown name
 const WEBHOOK_AVATAR_URL = process.env.WEBHOOK_AVATAR_URL; // optional avatar url
@@ -54,15 +56,21 @@ function stripMentions(raw) {
   return text;
 }
 
+// ---- NEW: alternate webhook "username" to force Discord to show header each time ----
+let flip = false;
+function webhookName() {
+  flip = !flip;
+  // Looks the same as "Announcement", but Discord treats it as a different author block.
+  return flip ? WEBHOOK_NAME : `${WEBHOOK_NAME}\u200b`;
+}
+
 async function sendViaWebhook(content) {
-  // Node 18+ has global fetch (Railway uses modern Node typically).
-  // If your runtime is older, tell me and I’ll add a node-fetch fallback.
   const res = await fetch(WEBHOOK_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       content,
-      username: WEBHOOK_NAME,
+      username: webhookName(),
       avatar_url: WEBHOOK_AVATAR_URL
     })
   });
@@ -102,8 +110,7 @@ client.on("messageCreate", async (message) => {
     // Delete the original message
     await message.delete().catch(() => {});
 
-    // Build repost content (Hella-style, clean)
-    // If empty after stripping, still ping everyone with no extra text
+    // Build repost content (clean, like Hella)
     const boldText = cleaned ? ` **${cleaned}**` : "";
     const out = `${PING_TEXT}${boldText}`;
 
@@ -114,6 +121,7 @@ client.on("messageCreate", async (message) => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
