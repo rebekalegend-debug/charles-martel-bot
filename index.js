@@ -14,7 +14,7 @@ const client = new Client({
 const TARGET_CHANNEL_ID = process.env.TARGET_CHANNEL_ID; // channel where users type announcements
 
 // IMPORTANT: role mention format is <@&ROLE_ID>
-const PING_TEXT = "<@&1469745384011075799>";
+const PING_TEXT = "@everyone";
 
 // Webhook config
 const WEBHOOK_URL = process.env.WEBHOOK_URL; // the channel webhook URL
@@ -115,12 +115,15 @@ client.on("messageCreate", async (message) => {
     const out = `${PING_TEXT}${boldText}`;
 
     await sendViaWebhook(out);
+await sendViaWebhook("\u200b");
+
   } catch (err) {
     console.error("Error handling messageCreate:", err);
   }
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
