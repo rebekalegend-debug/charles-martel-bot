@@ -54,37 +54,22 @@ client.once("ready", () => {
 
 client.on("messageCreate", async (message) => {
   try {
-    // Ignore bots (including itself)
     if (message.author.bot) return;
-
-    // Only react in the target channel
     if (message.channel.id !== TARGET_CHANNEL_ID) return;
-
-    // Optional per-user cooldown
-    if (USER_COOLDOWN_SECONDS > 0) {
-      const now = Date.now();
-      const last = lastUserPostAt.get(message.author.id) ?? 0;
-      if (now - last < USER_COOLDOWN_SECONDS * 1000) {
-        // Still delete the message to enforce “announcement-only” cleanliness
-        await message.delete().catch(() => {});
-        return;
-      }
-      lastUserPostAt.set(message.author.id, now);
-    }
 
     const cleaned = stripMentions(message.content);
 
-// Delete the original message
-await message.delete().catch(() => {});
+    // Delete the original message
+    await message.delete().catch(() => {});
 
-// Build repost content
-// If message is empty after stripping mentions, keep spacing
-const boldText = cleaned ? `**${cleaned}**` : "** **";
+    // Bold + spacer (no gif, no embed)
+    const boldText = cleaned ? `**${cleaned}**` : "** **";
 
-// Send as a NEW message (no embeds, no GIF, spaced)
-await message.channel.send(
-  `${PING_TEXT} ${boldText}\n\u200b`
-);
+    await message.channel.send(`${PING_TEXT} ${boldText}\n\u200b`);
+  } catch (err) {
+    console.error("Error handling messageCreate:", err);
+  }
+});
 
 client.login(process.env.DISCORD_TOKEN);
 
