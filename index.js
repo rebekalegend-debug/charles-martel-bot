@@ -19,7 +19,7 @@ import OpenAI from "openai";
 const HELP_CHANNEL_ID = "1469851657520283648"; // your channel
 const COOLDOWN_MS = 8000; // per-user cooldown
 const MAX_INPUT_CHARS = 1200; // keep prompts tight
-const MODEL = "gpt-5-mini"; // good cost/quality default (change anytime)
+const MODEL = "gpt-4o-mini"; // good cost/quality default (change anytime)
 
 // ====== Minimal built-in RoK knowledge snippets (expand this!) ======
 // These are short, general, and safe. Add your own curated notes + links.
@@ -162,3 +162,4 @@ ${kbBlock}
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
